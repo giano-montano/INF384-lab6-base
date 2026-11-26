@@ -4,9 +4,9 @@
 
 | Requisito | Gate (herramienta y umbral) | Bloquea / avisa | Etapa | Run fallido | Run corregido |
 | --- | --- | --- | --- | --- | --- |
-| 5.2 SI la cobertura de líneas es menor a 80 %, EL pipeline DEBE fallar | `jest --coverage` con `coverageThreshold.lines = 80` | Bloquea | PR y `main` | (link) | (link) |
-| 6.1 SI `npm audit` reporta una vulnerabilidad high o critical, EL pipeline DEBE fallar | `npm audit --audit-level=high` | Bloquea (moderate/low solo en el log) | PR y `main` | (link) | (link) |
-| 7.1 SI gitleaks detecta un secreto en el historial no registrado en `.gitleaksignore`, EL pipeline DEBE fallar | `gitleaks detect` v8.24.0, historial completo | Bloquea | PR y `main` | (link) | (link) |
+| 5.2 SI la cobertura de líneas es menor a 80 %, EL pipeline DEBE fallar | `jest --coverage` con `coverageThreshold.lines = 80` | Bloquea | PR y `main` | https://github.com/giano-montano/INF384-lab6-base/actions/runs/45904441891 | (link) |
+| 6.1 SI `npm audit` reporta una vulnerabilidad high o critical, EL pipeline DEBE fallar | `npm audit --audit-level=high` | Bloquea (moderate/low solo en el log) | PR y `main` | https://github.com/giano-montano/INF384-lab6-base/actions/runs/45904441891 | (link) |
+| 7.1 SI gitleaks detecta un secreto en el historial no registrado en `.gitleaksignore`, EL pipeline DEBE fallar | `gitleaks detect` v8.24.0, historial completo | Bloquea | PR y `main` | https://github.com/giano-montano/INF384-lab6-base/actions/runs/45904441891 | (link) |
 | 4.1 SI `aprobados` tiene más de 150 elementos → 400 (hallazgo 1) | Test `4.1a` y `4.1b` en `tests/habilitados.test.js` | Bloquea (job de tests) | PR y `main` | (link) | (link) |
 | 3.1/3.2/3.3 Código fuera de `^[A-Z0-9]{6}$` → 400 sin reflejar el input; 1.6 error no controlado → 500 sin stack (hallazgo 2) | Tests `3.1/3.2`, `3.3` y `1.6` | Bloquea (job de tests) | PR y `main` | (link) | (link) |
 | 2.2/2.4 `aprobados` no es array o tiene elementos no string → 400 (hallazgo 3) | Tests `2.2` y `2.4` | Bloquea (job de tests) | PR y `main` | (link) | (link) |

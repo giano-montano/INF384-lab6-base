@@ -11,17 +11,17 @@ Después de cada tarea: `npm test` en la terminal y commit + push.
 ## Tasks
 
 - [x] 1. Agregar los gates al pipeline
-  - [ ] 1.1 Umbral de cobertura en `jest.config.js`
+  - [x] 1.1 Umbral de cobertura en `jest.config.js`
     - Añadir `coverageThreshold: { global: { lines: 80 } }` al objeto exportado, sin tocar las otras claves.
     - En `.github/workflows/ci.yml`, cambiar el paso "Ejecutar pruebas" de `npm test` a `npm test -- --coverage`.
     - _Requisitos: 5.1, 5.2_
 
-  - [ ] 1.2 Job `audit` (SCA) en `.github/workflows/ci.yml`
+  - [x] 1.2 Job `audit` (SCA) en `.github/workflows/ci.yml`
     - Job separado `audit` en `ubuntu-latest`: `actions/checkout@v4`, `actions/setup-node@v4` con `node-version: 22`, y `npm audit --audit-level=high`.
     - No corregir la versión de `lodash` en esta tarea: el run debe fallar.
     - _Requisitos: 6.1_
 
-  - [ ] 1.3 Job `secrets` (gitleaks) en `.github/workflows/ci.yml`
+  - [x] 1.3 Job `secrets` (gitleaks) en `.github/workflows/ci.yml`
     - Job separado `secrets` en `ubuntu-latest`: `actions/checkout@v4` con `fetch-depth: 0`.
     - Descargar el CLI y escanear todo el historial:
       `curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.24.0/gitleaks_8.24.0_linux_x64.tar.gz | tar -xz gitleaks`
@@ -30,8 +30,8 @@ Después de cada tarea: `npm test` en la terminal y commit + push.
     - No tocar `config/ejemplo.env` en esta tarea: el run debe fallar.
     - _Requisitos: 7.1_
 
-- [ ] 2. Escribir los tests de `POST /habilitados` (deben fallar: el endpoint aún no existe)
-  - [ ] 2.1 Crear `tests/habilitados.test.js` con los tests del Requisito 1.
+- [x] 2. Escribir los tests de `POST /habilitados` (deben fallar: el endpoint aún no existe)
+  - [x] 2.1 Crear `tests/habilitados.test.js` con los tests del Requisito 1.
     - Importar `supertest`, `app` desde `../src/app` y `repositorio` desde `../src/data/repositorio`.
     - Test 1.1: `{ "aprobados": ["1INF25"] }` → 200, el body es un array.
     - Test 1.2: `{ "aprobados": [] }` → 200, exactamente los cursos con `prerequisites` vacío.
@@ -41,7 +41,7 @@ Después de cada tarea: `npm test` en la terminal y commit + push.
     - No implementar la ruta en esta tarea.
     - _Requisitos: 1.1, 1.2, 1.3, 1.4, 1.6_
 
-  - [ ] 2.2 Agregar al mismo archivo los tests de validación (Requisitos 2, 3 y 4).
+  - [x] 2.2 Agregar al mismo archivo los tests de validación (Requisitos 2, 3 y 4).
     - Test 2.1: `{}` → 400, `{ "error": "El campo aprobados es obligatorio" }`.
     - Test 2.2: `{ "aprobados": "1INF25" }` → 400, `{ "error": "El campo aprobados debe ser un array" }` (hallazgo 3).
     - Test 2.3: string `{invalid` con `Content-Type: application/json` → 400, `{ "error": "El body debe ser JSON válido" }`.

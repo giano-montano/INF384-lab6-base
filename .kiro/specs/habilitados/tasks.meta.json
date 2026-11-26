@@ -12,6 +12,18 @@
         "chatSessionId": "sess_34e696c8-c823-4319-a145-645d226ff67b",
         "timestamp": 1795731739987
       }
+    ],
+    "2. Escribir los tests de `POST /habilitados` (deben fallar: el endpoint aún no existe)": [
+      {
+        "executionId": "b0d10160-c351-4092-8f45-53e227599b57",
+        "chatSessionId": "sess_f8995ea0-6b09-4d77-9081-39627d923f0a",
+        "timestamp": 1795732063257
+      },
+      {
+        "executionId": "b0d10160-c351-4092-8f45-53e227599b57",
+        "chatSessionId": "sess_f8995ea0-6b09-4d77-9081-39627d923f0a",
+        "timestamp": 1795732169483
+      }
     ]
   }
 }
