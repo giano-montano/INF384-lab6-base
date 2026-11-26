@@ -1,0 +1,4 @@
+# La clave fue rotada. Permanece en el historial git del commit inicial
+# (7506fec) porque reescribir el historial en un repo público rompe la
+# trazabilidad del lab. El secreto ya no es válido.
+7506fecff32b342baaa4aa5dcb595bb5ccc75634:config/ejemplo.env:generic-api-key:4

@@ -71,14 +71,14 @@ Después de cada tarea: `npm test` en la terminal y commit + push.
     - No modificar otras líneas.
     - _Requisitos: 1.6, 2.3_
 
-- [ ] 4. Correcciones para dejar el pipeline en verde
-  - [ ] 4.1 Crear `tests/formato.test.js` con al menos un test por cada función exportada de `src/util/formato.js` (incluyendo `formatearCiclo` con `null` y `undefined`, `formatearTipo` con `"obligatorio"` y `"electivo"`, y `listaRequisitos` con array vacío y no vacío).
+- [x] 4. Correcciones para dejar el pipeline en verde
+  - [x] 4.1 Crear `tests/formato.test.js` con al menos un test por cada función exportada de `src/util/formato.js` (incluyendo `formatearCiclo` con `null` y `undefined`, `formatearTipo` con `"obligatorio"` y `"electivo"`, y `listaRequisitos` con array vacío y no vacío).
     - _Requisitos: 5.2_
 
-  - [ ] 4.2 Actualizar `lodash` a una versión sin vulnerabilidades altas: `npm install lodash@4.18.1` (actualiza `package.json` y `package-lock.json`). Verificar con `npm audit --audit-level=high` y con `npm test`.
+  - [x] 4.2 Actualizar `lodash` a una versión sin vulnerabilidades altas: `npm install lodash@4.18.1` (actualiza `package.json` y `package-lock.json`). Verificar con `npm audit --audit-level=high` y con `npm test`.
     - _Requisitos: 6.1_
 
-  - [ ] 4.3 Sacar la clave de `config/ejemplo.env` y registrar el hallazgo histórico.
+  - [x] 4.3 Sacar la clave de `config/ejemplo.env` y registrar el hallazgo histórico.
     - Reemplazar el valor por `CATALOGO_API_KEY=<definir-en-.env-local>`.
     - Crear `.gitleaksignore` con el fingerprint que reportó el run fallido del job `secrets` (formato `<commit>:config/ejemplo.env:<regla>:<línea>`), con un comentario `#` que diga que la clave fue rotada y por qué sigue en el historial.
     - _Requisitos: 7.1_

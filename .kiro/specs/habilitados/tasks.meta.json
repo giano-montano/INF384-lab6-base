@@ -36,6 +36,54 @@
         "chatSessionId": "sess_733f03c6-8277-41c8-b81c-931a769e750f",
         "timestamp": 1795732593501
       }
+    ],
+    "4. Correcciones para dejar el pipeline en verde": [
+      {
+        "executionId": "3956817f-5a99-46b0-bd86-26fe22898958",
+        "chatSessionId": "sess_73429c4d-69b4-4d8f-b712-6d0d2ea8637b",
+        "timestamp": 1795732850422
+      },
+      {
+        "executionId": "3956817f-5a99-46b0-bd86-26fe22898958",
+        "chatSessionId": "sess_73429c4d-69b4-4d8f-b712-6d0d2ea8637b",
+        "timestamp": 1795732946936
+      }
+    ],
+    "4.1 Crear `tests/formato.test.js` con al menos un test por cada función exportada de `src/util/formato.js` (incluyendo `formatearCiclo` con `null` y `undefined`, `formatearTipo` con `\"obligatorio\"` y `\"electivo\"`, y `listaRequisitos` con array vacío y no vacío).": [
+      {
+        "executionId": "3956817f-5a99-46b0-bd86-26fe22898958",
+        "chatSessionId": "sess_73429c4d-69b4-4d8f-b712-6d0d2ea8637b",
+        "timestamp": 1795732852522
+      },
+      {
+        "executionId": "3956817f-5a99-46b0-bd86-26fe22898958",
+        "chatSessionId": "sess_73429c4d-69b4-4d8f-b712-6d0d2ea8637b",
+        "timestamp": 1795732886668
+      }
+    ],
+    "4.2 Actualizar `lodash` a una versión sin vulnerabilidades altas: `npm install lodash@4.18.1` (actualiza `package.json` y `package-lock.json`). Verificar con `npm audit --audit-level=high` y con `npm test`.": [
+      {
+        "executionId": "3956817f-5a99-46b0-bd86-26fe22898958",
+        "chatSessionId": "sess_73429c4d-69b4-4d8f-b712-6d0d2ea8637b",
+        "timestamp": 1795732888590
+      },
+      {
+        "executionId": "3956817f-5a99-46b0-bd86-26fe22898958",
+        "chatSessionId": "sess_73429c4d-69b4-4d8f-b712-6d0d2ea8637b",
+        "timestamp": 1795732916905
+      }
+    ],
+    "4.3 Sacar la clave de `config/ejemplo.env` y registrar el hallazgo histórico.": [
+      {
+        "executionId": "3956817f-5a99-46b0-bd86-26fe22898958",
+        "chatSessionId": "sess_73429c4d-69b4-4d8f-b712-6d0d2ea8637b",
+        "timestamp": 1795732918631
+      },
+      {
+        "executionId": "3956817f-5a99-46b0-bd86-26fe22898958",
+        "chatSessionId": "sess_73429c4d-69b4-4d8f-b712-6d0d2ea8637b",
+        "timestamp": 1795732946903
+      }
     ]
   }
 }
