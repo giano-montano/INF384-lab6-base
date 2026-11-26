@@ -83,7 +83,7 @@ Después de cada tarea: `npm test` en la terminal y commit + push.
     - Crear `.gitleaksignore` con el fingerprint que reportó el run fallido del job `secrets` (formato `<commit>:config/ejemplo.env:<regla>:<línea>`), con un comentario `#` que diga que la clave fue rotada y por qué sigue en el historial.
     - _Requisitos: 7.1_
 
-- [ ]* 5. (Extra SAST) Job `codeql` en `.github/workflows/ci.yml` con `github/codeql-action/init@v3` y `github/codeql-action/analyze@v3`, lenguaje `javascript-typescript`, permiso `security-events: write`. Solo avisa: no se agrega como requisito bloqueante.
+- [x] 5. (Extra SAST) Job `codeql` en `.github/workflows/ci.yml` con `github/codeql-action/init@v3` y `github/codeql-action/analyze@v3`, lenguaje `javascript-typescript`, permiso `security-events: write`. Solo avisa: no se agrega como requisito bloqueante.
 
 ---
 

@@ -84,6 +84,18 @@
         "chatSessionId": "sess_73429c4d-69b4-4d8f-b712-6d0d2ea8637b",
         "timestamp": 1795732946903
       }
+    ],
+    "5. (Extra SAST) Job `codeql` en `.github/workflows/ci.yml` con `github/codeql-action/init@v3` y `github/codeql-action/analyze@v3`, lenguaje `javascript-typescript`, permiso `security-events: write`. Solo avisa: no se agrega como requisito bloqueante.": [
+      {
+        "executionId": "5ad403e4-ffec-4474-8688-d04fcf4ba2c4",
+        "chatSessionId": "sess_4d149de4-8028-4269-b60c-eab6cefb1510",
+        "timestamp": 1795733236576
+      },
+      {
+        "executionId": "5ad403e4-ffec-4474-8688-d04fcf4ba2c4",
+        "chatSessionId": "sess_4d149de4-8028-4269-b60c-eab6cefb1510",
+        "timestamp": 1795733249712
+      }
     ]
   }
 }
