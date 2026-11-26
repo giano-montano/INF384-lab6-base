@@ -21,4 +21,32 @@ jobs:
         run: npm ci
 
       - name: Ejecutar pruebas
-        run: npm test
+        run: npm test -- --coverage
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Auditoría de dependencias
+        run: npm audit --audit-level=high
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Descargar gitleaks
+        run: curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.24.0/gitleaks_8.24.0_linux_x64.tar.gz | tar -xz gitleaks
+
+      - name: Escanear historial en busca de secretos
+        run: ./gitleaks detect --source . --redact -v

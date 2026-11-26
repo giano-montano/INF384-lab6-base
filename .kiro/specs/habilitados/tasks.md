@@ -10,7 +10,7 @@ Después de cada tarea: `npm test` en la terminal y commit + push.
 
 ## Tasks
 
-- [ ] 1. Agregar los gates al pipeline
+- [x] 1. Agregar los gates al pipeline
   - [ ] 1.1 Umbral de cobertura en `jest.config.js`
     - Añadir `coverageThreshold: { global: { lines: 80 } }` al objeto exportado, sin tocar las otras claves.
     - En `.github/workflows/ci.yml`, cambiar el paso "Ejecutar pruebas" de `npm test` a `npm test -- --coverage`.
