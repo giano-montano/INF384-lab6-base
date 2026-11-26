@@ -1,0 +1,41 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1. Implementar `GET /cursos` con filtro por ciclo": [
+      {
+        "executionId": "e1bf58e6-f74b-442e-baf3-8d6e97115c97",
+        "chatSessionId": "sess_3dcdea8c-aef9-49d5-8bd7-cf73572845a6",
+        "timestamp": 1795728350681
+      },
+      {
+        "executionId": "e1bf58e6-f74b-442e-baf3-8d6e97115c97",
+        "chatSessionId": "sess_3dcdea8c-aef9-49d5-8bd7-cf73572845a6",
+        "timestamp": 1795728397337
+      }
+    ],
+    "2. Implementar `GET /cursos/:codigo`": [
+      {
+        "executionId": "ff8d7781-8de3-47fb-b1cb-6604f0755af9",
+        "chatSessionId": "sess_3dcdea8c-aef9-49d5-8bd7-cf73572845a6",
+        "timestamp": 1795728424788
+      },
+      {
+        "executionId": "ff8d7781-8de3-47fb-b1cb-6604f0755af9",
+        "chatSessionId": "sess_3dcdea8c-aef9-49d5-8bd7-cf73572845a6",
+        "timestamp": 1795728542724
+      }
+    ],
+    "3. Middleware de manejo de errores": [
+      {
+        "executionId": "da9d6c12-866e-4b72-b1b8-ec02ee10c555",
+        "chatSessionId": "sess_3dcdea8c-aef9-49d5-8bd7-cf73572845a6",
+        "timestamp": 1795728564471
+      },
+      {
+        "executionId": "da9d6c12-866e-4b72-b1b8-ec02ee10c555",
+        "chatSessionId": "sess_3dcdea8c-aef9-49d5-8bd7-cf73572845a6",
+        "timestamp": 1795728620607
+      }
+    ]
+  }
+}
