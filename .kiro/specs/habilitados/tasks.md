@@ -2,129 +2,94 @@
 
 ## Overview
 
-Implementar el endpoint `POST /habilitados` sobre la aplicación Express existente. El plan cubre la creación del validador de entrada, la lógica de negocio en la ruta, el registro en `app.js`, los ajustes de cobertura en `jest.config.js` y la actualización del pipeline de CI.
+Implementar el endpoint `POST /habilitados` sobre la aplicación Express existente. El orden es: primero los gates (para registrar el run en rojo), luego los tests (que fallan porque el endpoint no existe), luego la implementación y al final las correcciones que dejan el pipeline en verde.
+
+Después de cada tarea: `npm test` en la terminal y commit + push.
 
 ---
 
 ## Tasks
 
-- [ ] 1. Crear el validador de aprobados
-  - Crear el archivo `src/util/validadorAprobados.js` con la función pura `validarAprobados(body)`.
-  - La función devuelve `null` si el body es válido, o `{ status: 400, message: string }` con el primer error encontrado.
-  - Implementar el orden de validación exacto: (1) `aprobados` ausente, (2) no es array, (3) longitud > 150, (4) algún elemento no es string, (5) algún código no cumple `^[A-Z0-9]{6}$`.
-  - Verificar el tamaño antes de recorrer los elementos para evitar iterar listas grandes.
-  - Exportar `{ validarAprobados }` con `module.exports`.
-  - _Requisitos: 2.1, 2.2, 2.4, 3.1, 3.2, 4.1_
+- [ ] 1. Agregar los gates al pipeline
+  - [ ] 1.1 Umbral de cobertura en `jest.config.js`
+    - Añadir `coverageThreshold: { global: { lines: 80 } }` al objeto exportado, sin tocar las otras claves.
+    - En `.github/workflows/ci.yml`, cambiar el paso "Ejecutar pruebas" de `npm test` a `npm test -- --coverage`.
+    - _Requisitos: 5.1, 5.2_
 
-- [ ] 2. Crear la ruta `POST /habilitados`
-  - [ ] 2.1 Crear `src/routes/habilitados.js` con un `express.Router()` que registra `POST /`.
-    - Importar `validarAprobados` desde `../util/validadorAprobados` y `repositorio` desde `../data/repositorio`.
-    - En el handler: invocar `validarAprobados(req.body)`; si devuelve error, responder `res.status(400).json({ error: mensaje })` y retornar.
-    - Implementar `calcularHabilitados(aprobados)` como función local: convertir `aprobados` en un `Set`, llamar a `repositorio.listar()` y filtrar los cursos cuyo `id` no esté en el Set y cuya lista `prerequisites` esté completamente contenida en el Set.
-    - Responder 200 con el array resultante.
-    - Propagar cualquier excepción no controlada al middleware de error de `app.js` (no capturar con try/catch).
-    - Exportar el router con `module.exports = router`.
-    - _Requisitos: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6_
+  - [ ] 1.2 Job `audit` (SCA) en `.github/workflows/ci.yml`
+    - Job separado `audit` en `ubuntu-latest`: `actions/checkout@v4`, `actions/setup-node@v4` con `node-version: 22`, y `npm audit --audit-level=high`.
+    - No corregir la versión de `lodash` en esta tarea: el run debe fallar.
+    - _Requisitos: 6.1_
 
-  - [ ] 2.2 Registrar la ruta y el interceptor de SyntaxError en `src/app.js`.
-    - Añadir un middleware de 4 argumentos **antes** del middleware genérico existente que capture `err instanceof SyntaxError && err.status === 400 && 'body' in err` y responda `400 { "error": "El body debe ser JSON válido" }`.
-    - Añadir `app.use('/habilitados', require('./routes/habilitados'))` antes de los dos middlewares de error.
-    - No modificar ninguna otra línea de `app.js`.
-    - _Requisitos: 1.5, 2.3, 1.6_
+  - [ ] 1.3 Job `secrets` (gitleaks) en `.github/workflows/ci.yml`
+    - Job separado `secrets` en `ubuntu-latest`: `actions/checkout@v4` con `fetch-depth: 0`.
+    - Descargar el CLI y escanear todo el historial:
+      `curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.24.0/gitleaks_8.24.0_linux_x64.tar.gz | tar -xz gitleaks`
+      `./gitleaks detect --source . --redact -v`
+    - No usar `gitleaks-action`: en un push solo revisa los commits nuevos y no detectaría la clave de commits anteriores.
+    - No tocar `config/ejemplo.env` en esta tarea: el run debe fallar.
+    - _Requisitos: 7.1_
 
-- [ ] 3. Punto de control — verificar lógica principal
-  - Asegurarse de que todos los archivos creados/modificados hasta aquí son sintácticamente válidos (node --check).
-  - Confirmar que `npm test` ejecuta sin errores de módulo no encontrado antes de continuar.
-
-- [ ] 4. Escribir los tests de la ruta `/habilitados`
-  - [ ] 4.1 Crear `tests/habilitados.test.js` con los tests de criterios de respuesta correcta (Requisito 1).
-    - Importar `supertest` y `app` desde `../src/app`.
-    - Test 1.1: `POST /habilitados` con body `{ "aprobados": ["1INF25"] }` → 200, body es array.
-    - Test 1.2: body `{ "aprobados": [] }` → 200, el array resultante contiene exactamente los cursos cuyo campo `prerequisites` es `[]` y no contiene ningún curso con prerequisitos.
-    - Test 1.3: body `{ "aprobados": ["1INF25","1INF27","1INF49"] }` → 200, array de exactamente 27 cursos, el array incluye `1INF29`, `1INF30`, `1INF31` y `1INF32`.
-    - Test 1.4: para el mismo body del test 1.3, verificar que ningún `id` del array `aprobados` aparece en la respuesta y que cada curso devuelto tiene todos sus `prerequisites` dentro de `aprobados`.
-    - Test 1.6: usar `jest.spyOn(repositorio, 'listar').mockImplementation(() => { throw new Error('C:\\\\apps\\\\malla\\\\src\\\\x.js') })` → respuesta 500, body exactamente `{ "error": "Error interno del servidor" }`, body serializado no contiene `"stack"`, `"at "` ni `"C:\\"`.
+- [ ] 2. Escribir los tests de `POST /habilitados` (deben fallar: el endpoint aún no existe)
+  - [ ] 2.1 Crear `tests/habilitados.test.js` con los tests del Requisito 1.
+    - Importar `supertest`, `app` desde `../src/app` y `repositorio` desde `../src/data/repositorio`.
+    - Test 1.1: `{ "aprobados": ["1INF25"] }` → 200, el body es un array.
+    - Test 1.2: `{ "aprobados": [] }` → 200, exactamente los cursos con `prerequisites` vacío.
+    - Test 1.3: `{ "aprobados": ["1INF25","1INF27","1INF49"] }` → 200, exactamente 27 cursos, incluye `1INF29`, `1INF30`, `1INF31` y `1INF32`.
+    - Test 1.4: con el mismo body, ningún id de `aprobados` aparece en la respuesta y cada curso devuelto tiene sus `prerequisites` dentro de `aprobados`.
+    - Test 1.6: `jest.spyOn(repositorio, 'listar').mockImplementation(() => { throw new Error('C:\\apps\\malla\\src\\x.js') })` → 500, body exactamente `{ "error": "Error interno del servidor" }`, el body serializado no contiene `stack`, `at ` ni `C:\`. Restaurar el mock con `mockRestore()`.
+    - No implementar la ruta en esta tarea.
     - _Requisitos: 1.1, 1.2, 1.3, 1.4, 1.6_
 
-  - [ ] 4.2 Añadir los tests de validación de entrada (Requisitos 2, 3 y 4) al mismo archivo `tests/habilitados.test.js`.
-    - Test 2.1: body `{}` → 400, `{ "error": "El campo aprobados es obligatorio" }`.
-    - Test 2.2: body `{ "aprobados": "1INF25" }` → 400, mensaje contiene `"debe ser un array"`.
-    - Test 2.3: enviar string `{invalid` con cabecera `Content-Type: application/json` → 400, `{ "error": "El body debe ser JSON válido" }`.
-    - Test 2.4a: body `{ "aprobados": [123] }` → 400.
-    - Test 2.4b: body `{ "aprobados": [null] }` → 400.
-    - Test 3.1/3.2: body `{ "aprobados": ["1INF30<script>"] }` → 400, el body serializado de la respuesta no contiene la cadena `"<script>"`.
-    - Test 3.3: mismo caso anterior → status distinto de 500 y body serializado no contiene `"stack"`.
-    - Test 4.1a: array de 151 elementos (cadenas `"AAAAAA"` repetidas) → 400, `{ "error": "El campo aprobados no puede tener más de 150 elementos" }`.
-    - Test 4.1b: array de 5 000 elementos → 400 y el tiempo de respuesta es menor de 500 ms.
-    - Test 4.2: array de 150 elementos válidos que incluye duplicados (`"1INF25"` repetido) → 200.
+  - [ ] 2.2 Agregar al mismo archivo los tests de validación (Requisitos 2, 3 y 4).
+    - Test 2.1: `{}` → 400, `{ "error": "El campo aprobados es obligatorio" }`.
+    - Test 2.2: `{ "aprobados": "1INF25" }` → 400, `{ "error": "El campo aprobados debe ser un array" }` (hallazgo 3).
+    - Test 2.3: string `{invalid` con `Content-Type: application/json` → 400, `{ "error": "El body debe ser JSON válido" }`.
+    - Test 2.4: `[123]` y `[null]` → 400.
+    - Test 3.1/3.2: `["1INF30<script>"]` → 400, el body serializado no contiene `<script>` (hallazgo 2).
+    - Test 3.3: mismo caso → status distinto de 500 y el body no contiene `stack`.
+    - Test 4.1a: 151 elementos `"AAAAAA"` → 400, `{ "error": "El campo aprobados no puede tener más de 150 elementos" }`.
+    - Test 4.1b: 5 000 elementos → 400 en menos de 500 ms (hallazgo 1).
+    - Test 4.2: 150 elementos válidos con duplicados (`"1INF25"` repetido) → 200.
     - _Requisitos: 2.1, 2.2, 2.3, 2.4, 3.1, 3.2, 3.3, 4.1, 4.2_
 
-- [ ] 5. Punto de control — todos los tests de la ruta pasan
-  - Ejecutar `npm test -- --testPathPattern=habilitados --run` y confirmar que todos los tests de los pasos 4.1 y 4.2 pasan.
-  - Corregir cualquier discrepancia entre la implementación y los tests antes de continuar.
+- [ ] 3. Implementar el endpoint
+  - [ ] 3.1 Crear `src/util/validadorAprobados.js` con `validarAprobados(body)`.
+    - Devuelve `null` si es válido o `{ status: 400, message }` con el primer error.
+    - Orden: (1) `aprobados` ausente, (2) no es array, (3) longitud > 150, (4) algún elemento no es string → `"Uno o más elementos no son strings"`, (5) algún código no cumple `^[A-Z0-9]{6}$`.
+    - _Requisitos: 2.1, 2.2, 2.4, 3.1, 3.2, 4.1_
 
-- [ ] 6. Ajustar umbral de cobertura y tests de `formato.js`
-  - [ ] 6.1 Modificar `jest.config.js`: añadir `coverageThreshold: { global: { lines: 80 } }` dentro del objeto exportado.
-    - No modificar ninguna otra clave existente.
-    - _Requisitos: 5.1, 5.2_
+  - [ ] 3.2 Crear `src/routes/habilitados.js`.
+    - Router con `POST /`: validar con `validarAprobados(req.body)`; si hay error, responder 400 `{ error: message }`.
+    - Convertir `aprobados` en un `Set`, llamar a `repositorio.listar()` y filtrar los cursos cuyo `id` no esté en el Set y cuyos `prerequisites` estén todos en el Set. Mantener el orden del repositorio.
+    - Responder 200 con el array. No usar try/catch: los errores no controlados llegan al middleware de `app.js`.
+    - _Requisitos: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6_
 
-  - [ ] 6.2 Crear `tests/formato.test.js` con tests unitarios de todas las funciones exportadas por `src/util/formato.js`.
-    - Importar las funciones desde `../src/util/formato`.
-    - `formatearNombre`: al menos un test con cadena normal (ej. `"programación avanzada"`) y uno con cadena ya capitalizada.
-    - `formatearCreditos`: test con valor entero y con valor decimal.
-    - `formatearCiclo`: test con ciclo numérico, con `null` y con `undefined`.
-    - `formatearTipo`: test con `"obligatorio"` y con otro valor (ej. `"electivo"`).
-    - `resumenCurso`: test con un objeto curso válido.
-    - `totalCreditos`: test con array de cursos con distintos créditos.
-    - `agruparPorCiclo`: test con array que incluya al menos dos ciclos distintos.
-    - `ordenarPorCreditos`: test con array que incluya cursos con distintos créditos.
-    - `listaRequisitos`: test con array vacío y con array no vacío.
-    - _Requisitos: 5.1, 5.2_
+  - [ ] 3.3 Modificar `src/app.js`.
+    - Añadir `app.use('/habilitados', require('./routes/habilitados'))` después de `/cursos`.
+    - Añadir antes del middleware genérico un middleware de 4 argumentos que capture `err instanceof SyntaxError && err.status === 400 && 'body' in err` y responda `400 { "error": "El body debe ser JSON válido" }`.
+    - No modificar otras líneas.
+    - _Requisitos: 1.6, 2.3_
 
-- [ ] 7. Actualizar el pipeline de CI
-  - [ ] 7.1 Modificar `.github/workflows/ci.yml`: cambiar el paso "Ejecutar pruebas" de `run: npm test` a `run: npm test -- --coverage`.
-    - _Requisitos: 5.1, 5.2_
+- [ ] 4. Correcciones para dejar el pipeline en verde
+  - [ ] 4.1 Crear `tests/formato.test.js` con al menos un test por cada función exportada de `src/util/formato.js` (incluyendo `formatearCiclo` con `null` y `undefined`, `formatearTipo` con `"obligatorio"` y `"electivo"`, y `listaRequisitos` con array vacío y no vacío).
+    - _Requisitos: 5.2_
 
-  - [ ] 7.2 Añadir el job de auditoría de dependencias en `.github/workflows/ci.yml` como job separado.
-    - El job debe llamarse `audit`, ejecutarse en `ubuntu-latest`, hacer checkout del código con `actions/checkout@v4`, instalar dependencias con `npm ci` y ejecutar `npm audit --audit-level=high`.
-    - El job bloquea la integración si hay vulnerabilidades `high` o `critical`.
-    - _Requisitos: 5.1_
+  - [ ] 4.2 Actualizar `lodash` a una versión sin vulnerabilidades altas: `npm install lodash@4.18.1` (actualiza `package.json` y `package-lock.json`). Verificar con `npm audit --audit-level=high` y con `npm test`.
+    - _Requisitos: 6.1_
 
-  - [ ] 7.3 Añadir el job de detección de secretos con gitleaks en `.github/workflows/ci.yml` como job separado.
-    - El job debe llamarse `secrets`, ejecutarse en `ubuntu-latest`, hacer checkout con `fetch-depth: 0` (historial completo) usando `actions/checkout@v4`, y ejecutar `gitleaks/gitleaks-action@v2`.
-    - Cualquier hallazgo bloquea la integración.
-    - _Requisitos: 5.1_
+  - [ ] 4.3 Sacar la clave de `config/ejemplo.env` y registrar el hallazgo histórico.
+    - Reemplazar el valor por `CATALOGO_API_KEY=<definir-en-.env-local>`.
+    - Crear `.gitleaksignore` con el fingerprint que reportó el run fallido del job `secrets` (formato `<commit>:config/ejemplo.env:<regla>:<línea>`), con un comentario `#` que diga que la clave fue rotada y por qué sigue en el historial.
+    - _Requisitos: 7.1_
 
-- [ ] 8. Punto de control final — cobertura y todos los tests pasan
-  - Ejecutar `npm test -- --coverage --run` y confirmar que la cobertura de líneas es ≥ 80 % y que todos los tests pasan.
-  - Si la cobertura es inferior al 80 %, añadir los tests faltantes en `tests/formato.test.js` o `tests/habilitados.test.js` según corresponda.
+- [ ]* 5. (Extra SAST) Job `codeql` en `.github/workflows/ci.yml` con `github/codeql-action/init@v3` y `github/codeql-action/analyze@v3`, lenguaje `javascript-typescript`, permiso `security-events: write`. Solo avisa: no se agrega como requisito bloqueante.
 
 ---
 
 ## Notes
 
-- Las tareas marcadas con `*` son opcionales y pueden omitirse para una entrega mínima.
-- Cada tarea referencia los criterios de aceptación del `requirements.md` para trazabilidad.
-- Los puntos de control aseguran validación incremental antes de continuar.
-- Todos los tests usan Jest + supertest; no se introduce ninguna dependencia nueva.
-- El interceptor de SyntaxError en `app.js` debe ir **antes** del middleware genérico existente porque `express.json()` emite el error antes de que llegue al router.
-
----
-
-## Task Dependency Graph
-
-```json
-{
-  "waves": [
-    { "id": 0, "tasks": ["1"] },
-    { "id": 1, "tasks": ["2.1"] },
-    { "id": 2, "tasks": ["2.2"] },
-    { "id": 3, "tasks": ["3"] },
-    { "id": 4, "tasks": ["4.1", "4.2"] },
-    { "id": 5, "tasks": ["5"] },
-    { "id": 6, "tasks": ["6.1", "6.2"] },
-    { "id": 7, "tasks": ["7.1", "7.2", "7.3"] },
-    { "id": 8, "tasks": ["8"] }
-  ]
-}
-```
+- La tarea marcada con `*` es opcional.
+- Cada tarea referencia los criterios de `requirements.md`.
+- Sin dependencias nuevas; solo se actualiza la versión de `lodash`.
+- Las verificaciones (`npm test`, `npm test -- --coverage`) se corren a mano en la terminal, no como tareas de Kiro, para no gastar créditos.

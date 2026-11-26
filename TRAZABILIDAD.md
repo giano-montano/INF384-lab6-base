@@ -4,7 +4,12 @@
 
 | Requisito | Gate (herramienta y umbral) | Bloquea / avisa | Etapa | Run fallido | Run corregido |
 | --- | --- | --- | --- | --- | --- |
-| | | | | | |
+| 5.2 SI la cobertura de líneas es menor a 80 %, EL pipeline DEBE fallar | `jest --coverage` con `coverageThreshold.lines = 80` | Bloquea | PR y `main` | (link) | (link) |
+| 6.1 SI `npm audit` reporta una vulnerabilidad high o critical, EL pipeline DEBE fallar | `npm audit --audit-level=high` | Bloquea (moderate/low solo en el log) | PR y `main` | (link) | (link) |
+| 7.1 SI gitleaks detecta un secreto en el historial no registrado en `.gitleaksignore`, EL pipeline DEBE fallar | `gitleaks detect` v8.24.0, historial completo | Bloquea | PR y `main` | (link) | (link) |
+| 4.1 SI `aprobados` tiene más de 150 elementos → 400 (hallazgo 1) | Test `4.1a` y `4.1b` en `tests/habilitados.test.js` | Bloquea (job de tests) | PR y `main` | (link) | (link) |
+| 3.1/3.2/3.3 Código fuera de `^[A-Z0-9]{6}$` → 400 sin reflejar el input; 1.6 error no controlado → 500 sin stack (hallazgo 2) | Tests `3.1/3.2`, `3.3` y `1.6` | Bloquea (job de tests) | PR y `main` | (link) | (link) |
+| 2.2/2.4 `aprobados` no es array o tiene elementos no string → 400 (hallazgo 3) | Tests `2.2` y `2.4` | Bloquea (job de tests) | PR y `main` | (link) | (link) |
 
 ## Cambios a la propuesta de Kiro
 
@@ -17,4 +22,5 @@
 | design.md (Testing Strategy) | Volvió a meter 7 propiedades con `fast-check` como devDependency, aunque ya la había sacado de requirements | Las cambié por una tabla de tests de ejemplo, uno por criterio | Ya lo había descartado en requirements; es una dependencia nueva que no hace falta y el diseño no puede contradecir los requisitos aprobados |
 | design.md (orden de validación) | Validar el tipo de cada elemento antes que el tamaño de la lista | Primero el tamaño, después el tipo y al final el patrón | Con 5 000 elementos (hallazgo 1) el orden de Kiro recorre toda la lista antes de rechazarla; revisar el largo es instantáneo |
 | design.md | No decía qué hacer con códigos inexistentes, duplicados, minúsculas, electivos ni orden de la respuesta, y no tenía sección de gates | Agregué la tabla "Decisiones del endpoint" y la de gates (umbral, bloquea/avisa, etapa, razón) | Son casos que el pedido no define y los gates los pide el entregable E3 |
+| tasks.md | Ponía los tests de `formato.js` antes de los gates, no tenía tareas para subir `lodash` ni para la clave de `ejemplo.env`, los jobs de SCA y secretos citaban el requisito de cobertura (5.1), usaba `gitleaks-action` y `--run` (flag de Vitest) | Reordené: gates → tests → implementación → correcciones; agregué las tareas que faltaban, los requisitos 6.1 y 7.1, el CLI de gitleaks y saqué los puntos de control | Con el orden de Kiro nunca se ve el run en rojo que piden como evidencia y los gates no tenían requisito. La action, en un push, solo revisa los commits nuevos y no vería la clave vieja. `--run` rompe Jest y los puntos de control gastaban créditos solo para correr `npm test` |
 | requirements.md (1.6, 2.4) | El stack trace solo se cubría cuando fallaba la validación (1.6 era "el repositorio no carga", que no se puede provocar en un test). Tampoco validaba el tipo de cada elemento | 1.6 pasa a cubrir cualquier error no controlado → 500 genérico sin stack ni rutas. Agregué 2.4: un elemento que no es string → 400 | El hallazgo 2 era la fuga del stack trace. Y `regex.test(123)` acepta el número 123 porque lo convierte a texto |

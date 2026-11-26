@@ -77,3 +77,23 @@ Este documento describe los requisitos del endpoint `POST /habilitados`, que cal
 
 1. THE Pipeline_CI SHALL ejecutar `npm test` con recolección de cobertura en cada push y en cada pull request a `main`.
 2. IF la cobertura de líneas del proyecto cae por debajo del 80 %, THEN THE Pipeline_CI SHALL marcar la ejecución como fallida e impedir la integración.
+
+---
+
+### Requisito 6: Dependencias sin vulnerabilidades altas
+
+**Historia de usuario:** Como responsable de TI, quiero que ningún cambio llegue a `main` con dependencias vulnerables, para cumplir la política de seguridad.
+
+#### Criterios de aceptación
+
+1. IF `npm audit --audit-level=high` reporta al menos una vulnerabilidad de severidad `high` o `critical`, THEN THE Pipeline_CI SHALL marcar la ejecución como fallida en cada push y pull request a `main`.
+
+---
+
+### Requisito 7: Ningún secreto en el repositorio
+
+**Historia de usuario:** Como responsable de TI, quiero que el pipeline detecte secretos en el repositorio, para que ninguna clave quede expuesta en el historial.
+
+#### Criterios de aceptación
+
+1. IF gitleaks detecta al menos un secreto en cualquier commit del historial que no esté registrado en `.gitleaksignore`, THEN THE Pipeline_CI SHALL marcar la ejecución como fallida en cada push y pull request a `main`.
