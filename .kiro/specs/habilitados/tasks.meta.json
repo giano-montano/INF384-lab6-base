@@ -24,6 +24,18 @@
         "chatSessionId": "sess_f8995ea0-6b09-4d77-9081-39627d923f0a",
         "timestamp": 1795732169483
       }
+    ],
+    "3. Implementar el endpoint": [
+      {
+        "executionId": "5c3f032d-82f4-4007-a3be-39a40d5761be",
+        "chatSessionId": "sess_733f03c6-8277-41c8-b81c-931a769e750f",
+        "timestamp": 1795732404965
+      },
+      {
+        "executionId": "5c3f032d-82f4-4007-a3be-39a40d5761be",
+        "chatSessionId": "sess_733f03c6-8277-41c8-b81c-931a769e750f",
+        "timestamp": 1795732593501
+      }
     ]
   }
 }

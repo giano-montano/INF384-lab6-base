@@ -53,19 +53,19 @@ Después de cada tarea: `npm test` en la terminal y commit + push.
     - Test 4.2: 150 elementos válidos con duplicados (`"1INF25"` repetido) → 200.
     - _Requisitos: 2.1, 2.2, 2.3, 2.4, 3.1, 3.2, 3.3, 4.1, 4.2_
 
-- [ ] 3. Implementar el endpoint
-  - [ ] 3.1 Crear `src/util/validadorAprobados.js` con `validarAprobados(body)`.
+- [x] 3. Implementar el endpoint
+  - [x] 3.1 Crear `src/util/validadorAprobados.js` con `validarAprobados(body)`.
     - Devuelve `null` si es válido o `{ status: 400, message }` con el primer error.
     - Orden: (1) `aprobados` ausente, (2) no es array, (3) longitud > 150, (4) algún elemento no es string → `"Uno o más elementos no son strings"`, (5) algún código no cumple `^[A-Z0-9]{6}$`.
     - _Requisitos: 2.1, 2.2, 2.4, 3.1, 3.2, 4.1_
 
-  - [ ] 3.2 Crear `src/routes/habilitados.js`.
+  - [x] 3.2 Crear `src/routes/habilitados.js`.
     - Router con `POST /`: validar con `validarAprobados(req.body)`; si hay error, responder 400 `{ error: message }`.
     - Convertir `aprobados` en un `Set`, llamar a `repositorio.listar()` y filtrar los cursos cuyo `id` no esté en el Set y cuyos `prerequisites` estén todos en el Set. Mantener el orden del repositorio.
     - Responder 200 con el array. No usar try/catch: los errores no controlados llegan al middleware de `app.js`.
     - _Requisitos: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6_
 
-  - [ ] 3.3 Modificar `src/app.js`.
+  - [x] 3.3 Modificar `src/app.js`.
     - Añadir `app.use('/habilitados', require('./routes/habilitados'))` después de `/cursos`.
     - Añadir antes del middleware genérico un middleware de 4 argumentos que capture `err instanceof SyntaxError && err.status === 400 && 'body' in err` y responda `400 { "error": "El body debe ser JSON válido" }`.
     - No modificar otras líneas.

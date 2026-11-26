@@ -12,6 +12,16 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/cursos', require('./routes/cursos'));
+app.use('/habilitados', require('./routes/habilitados'));
+
+// Interceptor de SyntaxError de express.json()
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    return res.status(400).json({ error: 'El body debe ser JSON válido' });
+  }
+  next(err);
+});
 
 // Middleware de manejo de errores (debe ir al final, firma de 4 argumentos)
 // eslint-disable-next-line no-unused-vars
