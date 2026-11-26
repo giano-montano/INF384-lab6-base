@@ -121,63 +121,19 @@ Todos los campos del modelo se devuelven tal como los entrega el repositorio; no
 
 ---
 
-## Correctness Properties
+## Decisiones del endpoint (casos que el pedido no define)
 
-*Una propiedad es una característica o comportamiento que debe cumplirse en todas las ejecuciones válidas del sistema: una afirmación formal sobre lo que el sistema debe hacer. Las propiedades sirven de puente entre las especificaciones en lenguaje natural y las garantías de corrección verificables automáticamente.*
-
-### Property 1: La respuesta siempre es un array para entradas válidas
-
-*Para cualquier* array `aprobados` que cumpla todas las reglas de validación (elementos strings con patrón `^[A-Z0-9]{6}$`, longitud ≤ 150), `POST /habilitados` responde HTTP 200 y el body es un array JSON.
-
-**Validates: Requirements 1.1**
-
----
-
-### Property 2: Con aprobados vacío solo se habilitan los cursos sin prerequisitos
-
-*Para cualquier* estado del repositorio, cuando `aprobados = []`, el array devuelto contiene exactamente los cursos cuyo campo `prerequisites` es vacío y cuyo `id` no está en `aprobados`.
-
-**Validates: Requirements 1.2**
-
----
-
-### Property 3: Condición de habilitación es correcta y completa
-
-*Para cualquier* array válido de aprobados, cada curso en el array devuelto cumple `id ∉ aprobados` y `prerequisites.every(p => aprobados.includes(p))`; y ningún curso del repositorio que cumpla esas dos condiciones está ausente del resultado.
-
-**Validates: Requirements 1.4**
-
----
-
-### Property 4: Campo ausente siempre devuelve 400 con el mensaje correcto
-
-*Para cualquier* objeto JSON (incluido `{}` y objetos con otras claves) que no contenga la clave `aprobados`, la API responde HTTP 400 con exactamente `{ "error": "El campo aprobados es obligatorio" }`.
-
-**Validates: Requirements 2.1**
-
----
-
-### Property 5: Campo aprobados no-array siempre devuelve 400
-
-*Para cualquier* valor no-array asignado a `aprobados` (string, número, objeto, booleano, null), la API responde HTTP 400 con exactamente `{ "error": "El campo aprobados debe ser un array" }`.
-
-**Validates: Requirements 2.2**
-
----
-
-### Property 6: Código con formato inválido devuelve 400 sin reflejar el input
-
-*Para cualquier* array en el que al menos un elemento no cumpla `^[A-Z0-9]{6}$` (minúsculas, caracteres especiales, espacios, HTML, longitud diferente), la API responde HTTP 400 con `{ "error": "Uno o más códigos tienen un formato inválido" }` y el body no contiene el contenido del código inválido.
-
-**Validates: Requirements 3.1, 3.2, 3.3**
-
----
-
-### Property 7: Elemento no-string en aprobados devuelve 400
-
-*Para cualquier* array que contenga al menos un elemento que no sea string (número, null, objeto, booleano), junto con cero o más strings válidos, la API responde HTTP 400.
-
-**Validates: Requirements 2.4**
+| Caso | Decisión | Razón |
+| --- | --- | --- |
+| Código con formato válido que no existe en la malla (ej. `9ZZZ99`) | Se ignora, responde 200 | No afecta el resultado (ningún curso lo tiene como requisito). Rechazarlo obligaría a que el alumno conozca exactamente los códigos del JSON, y un curso de otro plan aprobado no debería romper la consulta |
+| Códigos duplicados en `aprobados` | Se ignoran (se usa un `Set`) | Aprobar dos veces el mismo curso no cambia nada. El límite de 150 se cuenta sobre el arreglo recibido, así que los duplicados no permiten saltarse el límite (y hace posible el criterio 4.2, ya que la malla solo tiene 87 cursos) |
+| Minúsculas (`1inf25`) | 400 por formato inválido | Los códigos del JSON están todos en mayúsculas; normalizar en silencio esconde errores del cliente y el patrón queda simple |
+| Lista vacía `[]` | 200 con los cursos sin requisitos | Lo pide el criterio 1.2: un alumno nuevo puede llevar los cursos sin requisitos |
+| Body vacío o sin `Content-Type: application/json` | `express.json()` deja `req.body = {}` → 400 "El campo aprobados es obligatorio" | Es el mismo caso que no enviar el campo |
+| Electivos (`cycle: null`) | Se incluyen si cumplen la condición | Son cursos que el alumno puede matricular; el pedido no los excluye |
+| Forma de cada curso en la respuesta | Objeto completo del repositorio (`id`, `name`, `credits`, `cycle`, `type`, `prerequisites`) | El alumno necesita créditos y ciclo para planificar; no hay datos sensibles en el modelo |
+| Orden de la respuesta | El mismo de `data/cursos.json` (por ciclo), igual que `GET /cursos` | Respuesta estable y consistente con el endpoint existente; permite tests deterministas |
+| Tamaño del body | Límite por defecto de `express.json()` (100 kb) | Con 150 códigos de 6 caracteres el body pesa ~1.5 kb; el límite de 100 kb corta antes cualquier body gigante |
 
 ---
 
@@ -185,7 +141,7 @@ Todos los campos del modelo se devuelven tal como los entrega el repositorio; no
 
 ### SyntaxError de `express.json()`
 
-Cuando el body no es JSON válido, `express.json()` lanza un `SyntaxError` con `status: 400` y lo pasa al siguiente middleware de error. El middleware genérico existente en `app.js` respondería 500 (porque no distingue tipo de error). Por eso se añade un interceptor específico antes del genérico:
+Cuando el body no es JSON válido, `express.json()` lanza un `SyntaxError` con `status: 400`. El middleware genérico actual respondería 400 con el mensaje "Error interno del servidor", que es engañoso. Por eso se añade un interceptor antes del genérico:
 
 ```js
 // En app.js, antes del middleware genérico de 4 args
@@ -199,66 +155,57 @@ app.use((err, req, res, next) => {
 
 ### Errores no controlados en la ruta
 
-Cualquier excepción lanzada dentro del handler de `/habilitados` (por ejemplo, si `repositorio.listar()` fallara) llega al middleware genérico de `app.js`, que ya responde HTTP 500 con `{ "error": "Error interno del servidor" }` sin stack trace ni rutas del sistema.
+Cualquier excepción dentro del handler de `/habilitados` llega al middleware genérico de `app.js`, que responde HTTP 500 con `{ "error": "Error interno del servidor" }` sin stack trace ni rutas (criterio 1.6). Se prueba forzando el error con `jest.spyOn(repositorio, 'listar').mockImplementation(() => { throw new Error('C:\\apps\\malla\\src\\x.js') })` y verificando que el body no contiene `stack`, `at ` ni `C:\`.
 
 ### Orden de validación en `validarAprobados`
 
-El validador comprueba en este orden, devolviendo al primer fallo:
+El validador comprueba en este orden y devuelve el primer fallo:
 
 1. `body.aprobados === undefined` → `"El campo aprobados es obligatorio"` (400)
 2. `!Array.isArray(body.aprobados)` → `"El campo aprobados debe ser un array"` (400)
-3. `body.aprobados.some(e => typeof e !== 'string')` → HTTP 400 (sin mensaje específico en requirements, se devuelve `"Uno o más elementos no son strings"`)
-4. `body.aprobados.length > 150` → `"El campo aprobados no puede tener más de 150 elementos"` (400)
+3. `body.aprobados.length > 150` → `"El campo aprobados no puede tener más de 150 elementos"` (400)
+4. `body.aprobados.some(e => typeof e !== 'string')` → `"Uno o más elementos no son strings"` (400)
 5. `body.aprobados.some(e => !/^[A-Z0-9]{6}$/.test(e))` → `"Uno o más códigos tienen un formato inválido"` (400)
 
-La verificación de tipo (paso 3) se hace antes de la de tamaño (paso 4) porque un elemento no-string podría provocar un TypeError en la regex del paso 5.
+El tamaño se verifica **antes** de recorrer los elementos: es una comprobación O(1) y evita procesar listas de 5 000 elementos (hallazgo 1). El tipo se verifica antes del patrón porque `regex.test(123)` convierte el número a `"123"` y lo aceptaría.
 
 ---
 
 ## Testing Strategy
 
-### Archivo de pruebas
+Archivo `tests/habilitados.test.js`: pruebas con supertest sobre `src/app.js` (sin levantar el servidor) y pruebas unitarias de `validarAprobados`. Tests de ejemplo con Jest, sin dependencias nuevas. Al menos un test por criterio:
 
-`tests/habilitados.test.js` — pruebas de integración HTTP con supertest sobre `src/app.js` y pruebas unitarias del validador.
+| Criterio | Test |
+| --- | --- |
+| 1.1 | Body válido → 200 y el body es un array |
+| 1.2 | `[]` → 200, exactamente los cursos sin requisitos |
+| 1.3 | `["1INF25","1INF27","1INF49"]` → 27 cursos, incluye 1INF29, 1INF30, 1INF31, 1INF32 |
+| 1.4 | Ningún curso de `aprobados` aparece en la respuesta y todo curso devuelto tiene sus requisitos en `aprobados` |
+| 1.6 | `repositorio.listar` lanza error → 500, body exacto, sin `stack`, `at ` ni `C:\` |
+| 2.1 | `{}` → 400 "El campo aprobados es obligatorio" |
+| 2.2 | `{"aprobados":"1INF25"}` → 400 "debe ser un array" (hallazgo 3) |
+| 2.3 | Body `{invalid` con `Content-Type: application/json` → 400 "El body debe ser JSON válido" |
+| 2.4 | `[123]` y `[null]` → 400 |
+| 3.1 / 3.2 | `["1INF30<script>"]` → 400 y el body no contiene `<script>` (hallazgo 2) |
+| 3.3 | Mismo caso → status distinto de 500, sin `stack` |
+| 4.1 | 151 elementos → 400 (hallazgo 1); 5 000 elementos → 400 en menos de 500 ms |
+| 4.2 | 150 elementos válidos (con duplicados) → 200 |
+| 5.1 / 5.2 | Se verifican con el gate de cobertura en CI (ver abajo) |
 
-### Grupos de casos
+**Cobertura:** hoy la cobertura de líneas es 66.7 % porque `src/util/formato.js` no tiene tests. Al activar el umbral el pipeline va a fallar; se corrige agregando `tests/formato.test.js`.
 
-**Happy path (ejemplos concretos)**
-- `aprobados = []` → 200, solo cursos sin prerequisitos.
-- `aprobados = ["1INF25","1INF27","1INF49"]` → 200, exactamente 27 cursos, incluye `1INF29`, `1INF30`, `1INF31`, `1INF32`.
-- `aprobados` con exactamente 150 elementos válidos → 200.
+---
 
-**Validaciones (ejemplos)**
-- Body sin `Content-Type: application/json` ni body → comportamiento de express.json.
-- Body `"{invalid"` → 400, mensaje JSON inválido.
-- Elemento nulo o numérico en el array → 400.
-- Array de 151 elementos → 400, mensaje de tamaño.
+## Gates de calidad y seguridad (ci.yml)
 
-**Pruebas de propiedad (jest-fast-check)**
+| Gate | Herramienta y umbral | Bloquea / avisa | Etapa | Razón |
+| --- | --- | --- | --- | --- |
+| Cobertura (Req. 5) | `npm test -- --coverage` con `coverageThreshold.global.lines = 80` en `jest.config.js` | Bloquea | Pull request y push a `main` | La política de TI exige que la cobertura no baje de 80 %. En el PR se detecta antes de integrar; en `main` porque es lo que se publica |
+| SCA | `npm audit --audit-level=high` (sin `--omit=dev`) | Bloquea en `high` y `critical`; `moderate` y `low` solo aparecen en el log (avisa) | Pull request y push a `main` | La política prohíbe dependencias con vulnerabilidades altas o críticas. Se incluyen las devDependencies porque también corren en el pipeline. No se bloquea por moderadas para no frenar entregas por avisos sin parche disponible |
+| Secretos | `gitleaks` (`gitleaks/gitleaks-action@v2`) sobre **todo el historial** (`fetch-depth: 0`), cualquier hallazgo | Bloquea | Pull request y push a `main` | La política prohíbe secretos en el repositorio. Se escanea el historial porque un secreto borrado en un commit posterior sigue expuesto. Un hallazgo solo se acepta en `.gitleaksignore` después de rotar la clave, con la razón registrada |
+| SAST (extra) | CodeQL (`github/codeql-action`, lenguaje `javascript`) | Avisa | Pull request y push a `main` | Detecta patrones inseguros en el código (inyección, XSS). Empieza como aviso porque puede dar falsos positivos y tarda más que los otros gates; se pasa a bloqueante cuando el equipo revise los hallazgos iniciales |
 
-La librería elegida es **fast-check** (pura JS, compatible con Jest, sin transpilación). Se añade como devDependency:
-
-```
-npm install --save-dev fast-check
-```
-
-**Justificación de nueva devDependency**: fast-check es la única librería de property-based testing madura para Node.js/Jest sin TypeScript. No es una dependencia de producción. No hay alternativa razonable que evite implementar PBT desde cero.
-
-Cada propiedad se ejecuta con mínimo 100 iteraciones. Las propiedades y sus tags:
-
-| Test | Propiedad | Tag |
-|------|-----------|-----|
-| Para cualquier array válido → 200 y body es array | Property 1 | `Feature: habilitados, Property 1: respuesta siempre es un array para entradas válidas` |
-| Para aprobados=[] → solo cursos sin prerequisites | Property 2 | `Feature: habilitados, Property 2: con aprobados vacío solo se habilitan cursos sin prerequisites` |
-| Condición de habilitación correcta y completa | Property 3 | `Feature: habilitados, Property 3: condición de habilitación es correcta y completa` |
-| Campo ausente → 400 mensaje obligatorio | Property 4 | `Feature: habilitados, Property 4: campo ausente devuelve 400 con mensaje correcto` |
-| aprobados no-array → 400 | Property 5 | `Feature: habilitados, Property 5: campo aprobados no-array devuelve 400` |
-| Código inválido → 400 sin reflejar input | Property 6 | `Feature: habilitados, Property 6: código inválido devuelve 400 sin reflejar el input` |
-| Elemento no-string → 400 | Property 7 | `Feature: habilitados, Property 7: elemento no-string en aprobados devuelve 400` |
-
-**Cobertura**
-
-El threshold del 80 % en `jest.config.js` se activa con `npm test -- --coverage`. Las pruebas anteriores (cursos, repositorio, health) ya cubren `repositorio.js` y `cursos.js`; los nuevos tests cubren `habilitados.js` y `validadorAprobados.js`.
+Los tres gates obligatorios corren como jobs separados, para que un fallo en uno no oculte el resultado de los otros.
 
 ---
 
@@ -266,15 +213,15 @@ El threshold del 80 % en `jest.config.js` se activa con `npm test -- --coverage`
 
 | Decisión | Alternativa considerada | Justificación |
 |----------|------------------------|---------------|
-| Validador en `src/util/validadorAprobados.js` | Inline en la ruta | Testeable de forma aislada; ruta queda corta; consistente con la existencia de `src/util/formato.js` |
-| Interceptor de SyntaxError en `app.js` | Interceptor dentro del router `/habilitados` | El SyntaxError lo emite el middleware global `express.json()`, que se ejecuta antes del router. Colocarlo en `app.js` lo centraliza para todos los endpoints actuales y futuros |
-| Umbral de cobertura en `jest.config.js` | Flag `--coverageThreshold` en `ci.yml` | Fallo de umbral visible localmente sin depender del CI; configuración centralizada; ci.yml solo necesita pasar `--coverage` |
-| Devolver objetos Curso completos | Devolver solo `id` y `name` | Los requirements especifican "objetos Curso completo (todos los campos del modelo)" (RF-01) |
-| fast-check como devDependency | No usar PBT | La lógica de filtrado y validación tiene propiedades universales con espacio de inputs grande; PBT detecta casos borde que los tests de ejemplo no cubren. Se justifica la dependencia por ser devDependency |
-| Verificar tipo de elemento antes de tamaño | Verificar tamaño primero | Evita TypeError al aplicar regex sobre un valor no-string |
+| Validador en `src/util/validadorAprobados.js` | Inline en la ruta | Testeable de forma aislada; ruta queda corta; consistente con `src/util/formato.js` |
+| Interceptor de SyntaxError en `app.js` | Interceptor dentro del router `/habilitados` | El SyntaxError lo emite `express.json()`, que corre antes del router; centralizarlo sirve a todos los endpoints |
+| Umbral de cobertura en `jest.config.js` | Flag en `ci.yml` | El fallo de umbral se ve también localmente; `ci.yml` solo pasa `--coverage` |
+| Devolver objetos Curso completos | Devolver solo `id` y `name` | El alumno necesita créditos y ciclo para planificar (criterio 1.1) |
+| Tests de ejemplo con Jest, sin PBT | `fast-check` (property-based testing) | El steering prohíbe dependencias nuevas sin necesidad; con un test por criterio se cubren los requisitos y los tres hallazgos |
+| Verificar tamaño antes que tipo y patrón | Verificar tipo primero | El tamaño es O(1) y corta las listas grandes antes de recorrerlas (hallazgo 1) |
 
 ---
 
-## No se añaden dependencias de producción
+## Dependencias
 
-No se agrega ninguna dependencia al bloque `dependencies` de `package.json`. La única adición es `fast-check` en `devDependencies`, justificada en la sección Testing Strategy.
+No se agrega ninguna dependencia nueva a `package.json`. Para cumplir el gate de SCA se actualiza `lodash` de `4.17.20` a una versión sin vulnerabilidades altas.
